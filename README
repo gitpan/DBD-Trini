@@ -1,0 +1,287 @@
+DBD/Trini version 0.01
+========================
+
+NAME
+    DBD::Trini - Pure Perl DBMS
+
+SYNOPSIS
+     #!/usr/local/bin/perl -w
+     use strict;
+     use DBD::Trini;
+     my ($path, $sql, $dbh, $sth, $i);
+ 
+     # directory where database is stored
+     $path = 'mydb'; 
+ 
+     $sql = <<'(SQL)';
+     create table members
+        member_pk   VARCHAR(5),
+        name_first  VARCHAR(25),
+        name_last   VARCHAR(25),
+        notes       MEMO
+     (SQL)
+ 
+     # create the database
+     $dbh = DBI->connect("dbi:Trini:$path", '', '', {'create'=>1});
+     $dbh->do($sql) or die $DBI::errstr;
+     $dbh->commit();
+ 
+     # insert
+     $sql = qq[ insert into members(member_pk, name_first, name_last, notes) values(?,?,?,?) ];
+     $sth = $dbh->prepare($sql) or die $DBI::errstr;
+     $i=1;
+ 
+     $sth->execute( $i++, 'Starflower', 'Shanti',   'Totally cool chick')       or die $DBI::errstr;
+     $sth->execute( $i++, 'Paul',       'Ruggerio', 'Dangerous with a spatula') or die $DBI::errstr;
+     $sth->execute( $i++, 'Mary',       'Edwin',    'Star Wars nut')            or die $DBI::errstr;
+     $sth->execute( $i++, 'Ryan',       'Ragsdale', 'Loves his daughter')       or die $DBI::errstr;
+     $sth->execute( $i++, 'Grady',      'Smith',    'Great sculptor')           or die $DBI::errstr;
+ 
+     # updates
+     $sql = qq[ update members set name_first=? where member_pk=2 ];
+     $sth = $dbh->prepare($sql) or die $DBI::errstr;
+     $sth->execute('Guido') or die $DBI::errstr;
+ 
+     # select
+     $sql = qq[ select name_last || ',' ||| name_first as name from members where member_pk=? ];
+     $sth = $dbh->prepare($sql) or die $DBI::errstr;
+     $sth->execute(2) or die $DBI::errstr;
+ 
+     while (my $row = $sth->fetchrow_hashref)
+        { print $row->{'name'}, "\n" }
+ 
+     # delete
+     $sql = 'delete from members where member_pk > ?';
+     $sth = $dbh->prepare($sql);
+     $sth->execute(3);
+
+INSTALLATION
+    "Easy Installation" is one of Trini's central goals. Just copy Trini.pm
+    into the DBD/ directory of one of your library trees.
+
+    Or you can do the traditional routine:
+
+        perl Makefile.PL
+        make
+        make test
+        make install
+
+    You will also need to install the following modules which are also Pure
+    Perl, are just as easy to install, and are on CPAN:
+
+            Data::Taxi
+            SQL::YASP
+
+    Finally, you'll need to install the DBI module itself, which may be
+    anywhere from extremely easy (it's included in later distributions of
+    Perl 5) to painfully difficult, depending on your skill level. Be sure
+    to check out the notes in DBI about the the Pure Perl version of DBI if
+    you find it difficult to install DBI.
+
+DESCRIPTION
+    Trini (pronounced "TRINN-EE") is a Pure Perl DBMS. Some highlights of
+    the eventual product:
+
+    - Commit/rollback segments
+
+    - Journaled data writing for automatic crash recovery
+
+    - All data stored in a single data file
+
+    - Open architecture for data type definitions (i.e., create your own
+    types of database fields)
+
+    - Enforcement of referential integrity
+
+    - Triggers
+
+    - Constraints
+
+    - Entirely written in the grooviest programming language there is
+
+So, do the world really need another DBMS?
+    The creation of "yet another DBMS" requires some justification. After
+    all, there are already several excellent open source DBMS packages,
+    notably MySQL and PostGreSql.
+
+    And yet, despite the availability of those programs, Perl hackers around
+    the world continue to store data in Unix DB tables, flat files, and
+    other file-based data structures. The difficulty in using those data
+    storage techniques seems less daunting than the difficulty of
+    installing, starting, and connecting to a true DBMS package.
+
+    The problem, I believe, is a simple question of paradigm confusion.
+    Programmers want to understand how and where their data is being stored.
+    They want to have a file where they can see the data, and they want to
+    be able to install a simple package quickly and begin using it without
+    spending a long time reading through installation guides.
+
+    Finally, for those of us who prefer Perl to any other language, there is
+    a need for a DBMS that lets us join in the fun of hacking the code.
+
+    Trini was created to fill this niche. The entirety of Trini's code is
+    contained in a half dozen Pure Perl modules, all of which can be
+    installed either through the traditional make/make test/make install
+    dance, or by simply copying them into your @INC library. The data is
+    stored in a single data file. Trini provides a rich (and extensible) set
+    of SQL operators and commands, compliments of SQL::YASP. Trini provides
+    commit/rollback segments, and automatic crash recovery, both compliments
+    of FileHandle::Rollback. Trini also provides an extensible field type
+    API, so that if the built-in data types (NUMBER, VARCHAR, MEMO, others)
+    don't suit you, you can define your own.
+
+    Trini is still in its early stages. I've defined a data structure. It
+    can do basic database definition, inserts, deletes, updates and selects.
+    I invite all interested parties to join in the fun.
+
+Similar modules
+    Trini is hardly the first Pure Perl database manager. To my knowledge
+    none of them provide the same set of features as listed above, though
+    many provide some of those features. Some similar modules are:
+
+    DBD::Sprite
+        Sprite is a popular Pure Perl DBMS with many of the features listed
+        above. AFAIK, however, it does not support the following features,
+        and given how Sprite stores data, it is not likely to do so in the
+        near future:
+
+        - Cannot store undefs, only stores nulls as empty strings.
+
+        - Does not have auomatic crash recovery
+
+        - Does not have extensible datatype API
+
+        - Does not support extensible SQL function and operator definitions
+
+        - Does not handle "memo" (i.e. strings of arbitrary length) fields
+
+        - Sprite does not bill itself as a production-worthy DBMS. Trini
+        will.
+
+        - Does not have indexing to speed up queries.
+
+        BTW, I always get yelled at when I attempt to list the differences
+        in modules. Jim, I apologize in advance if this list isn't quite
+        right. Drop me a line and I'll fix it. :-)
+
+        Sprite does support user-ids and passwords, which is a nice feature.
+        Trini doesn't support that feature, and for now I don't plan to do
+        so.
+
+    DBD::SQLite
+        DBD::SQLite is a very powerful local-file DBMS. It accomplishes many
+        of the same objectives as Trini. Is not Pure Perl. Obviously a much
+        more mature package than Trini, you should definitely look at SQLite
+        if you need to get going on a local-file project immediately.
+
+A note about the state of Trini
+    This is an early release of Trini. In the spirit of Eric Raymond's motto
+    "Release Early, Release Often" I am releasing Trini before it is a fully
+    working module, or indeed before it is properly documented. This version
+    does some very basic databasing operations. It allows you to create a
+    database, insert, update, select, and delete records. It supports two
+    data types: varchar and memo. See demo.pl for a basic walk through of
+    Trini's current features.
+
+    A few things this module does NOT support are: modifying the structure
+    of a database, data integrity checks, file locking, rollback segments,
+    and automatic crash recovery. All of those features are planned. Indeed,
+    Trini was designed with those features in mind.
+
+    See the TO DO section below for a more detailed list of planned
+    features.
+
+To Do
+  Rollback segments and automatic crash recovery
+
+    Rollback segments and automatic crash recovery will both be implemented
+    using File::Rollback, which encapsulates both of these features.
+
+  Indexing
+
+    The open architecture of Trini should support indexing well. Here's how
+    it should work:
+
+    Each field is an instantiation of a class. Right now there are only two
+    datatype classes: varchar and memo. One of the methods of a datatype
+    class is that when the record is modified, the field object can use its
+    "get_db_value" method to modify other records. That's what memo fields
+    do to store strings of arbitrary length.
+
+    So, we need to create an index class that contructs a binary tree based
+    on the value of some expression that uses the values in the record.
+    Then, when a search is done that uses that expression, the search engine
+    will understand to trace through the binary tree rather than do a brute
+    force search.
+
+    There are several tasks that need to be done, however. First, every
+    datatype field needs to implement a compare_as method that tells the
+    indexer if the field value should be compared as a string or as a
+    number. Then, we need to augment YASP so that every operator and
+    function does the same thing, with the addition that they might also
+    return either. Next, YASP needs to be able to return information on any
+    given expression about if that expression returns a string or a number.
+    Still with me? OK, finally, the indexing class uses all this
+    string/number information compare values numerically or stringily.
+
+    So you see why I haven't gotten around to it just yet.
+
+  Modifying the structure of a database
+
+    Trini currently does not support modifying the structure of a database
+    once it's created. As Homer would say, "doh". The structure of a Trini
+    file is such that once it's written, you need to rewrite the entire
+    database file to modify the structure. I don't think that's such a big
+    deal, but it does mean writing an entire routine to do it.
+
+    Oh, and as long as we're rewriting the entire data file, we can go ahead
+    and...
+
+  Compact the database file
+
+    The structure of Trini data files is such that the space of a deleted
+    record can only be reclaimed by another record of the same type. Trini
+    is quite good at that... a new record never increases the size of the
+    file as long as there is space from a previously deleted record of the
+    same table. However, it can still happen that a database becomes
+    bloated. There needs to be a "compact" method that rewrites the data
+    file, removing empty space.
+
+  Data integrity checks
+
+    Trini currently stores the information about any data integrity checks,
+    but does not implement them. When a record is saved, there needs to be a
+    call to each field to run its "validate" method, returning an error if
+    any of the validations fail. There also needs to be a check of any check
+    constraints that were defined for the table.
+
+  File locking
+
+    Trini needs to automatically lock the entire database for every call,
+    using either shared locks for read-only access or exclusive locks for
+    write access. Because each Trini database has its own directory, it
+    should be relatively simple to have a file called "lock" that is opened
+    and locked for each access.
+
+TERMS AND CONDITIONS
+    This library is free software; you can redistribute it and/or modify it
+    under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or (at
+    your option) any later version.
+
+    This library is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+    General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this library; if not, write to the Free Software Foundation,
+    Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+AUTHOR
+    Miko O'Sullivan miko@idocs.com
+
+VERSION
+    Version 0.01 July 15, 2003
+        Initial release
+
